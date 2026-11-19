@@ -1,0 +1,31 @@
+diff --git a/camera.py b/camera.py
+index 435def72..96b928fe 100644
+--- a/camera.py
++++ b/camera.py
+@@ -6,7 +6,11 @@ from aiohomekit.model import Accessory, Transport
+ from aiohomekit.model.services import ServicesTypes
+ from yarl import URL
+ 
+-from homeassistant.components.camera import Camera, CameraEntityFeature
++from homeassistant.components.camera import (
++    Camera,
++    CameraEntityCapabilities,
++    CameraEntityFeature,
++)
+ from homeassistant.config_entries import ConfigEntry
+ from homeassistant.const import Platform
+ from homeassistant.core import HomeAssistant, callback
+@@ -32,6 +36,13 @@ class HomeKitCamera(AccessoryEntity, Camera):
+         # go2rtc's homekit:// source only streams from IP accessories with aid 1
+         if accessory.pairing.transport is Transport.IP and self._aid == 1:
+             self._attr_supported_features = CameraEntityFeature.STREAM
++            # Cameras with a speaker play audio sent on the stream (talk-back)
++            if accessory.entity_map.aid(self._aid).services.first(
++                service_type=ServicesTypes.SPEAKER
++            ):
++                self._attr_camera_entity_capabilities = CameraEntityCapabilities(
++                    two_way_audio=True
++                )
+ 
+     @override
+     def get_characteristic_types(self) -> list[str]:

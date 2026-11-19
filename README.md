@@ -12,6 +12,7 @@ release, uninstall this and use the built-in integration again.
 ## What it changes
 
 - Cameras paired over IP get a `homekit://` stream source, so Home Assistant streams their live video (and audio) through its built-in go2rtc over WebRTC. Cameras behind a HomeKit bridge keep snapshots only.
+- Cameras with a speaker (e.g. video doorbells) declare two-way audio, so the camera view offers talk-back. Talk-back also needs [ha-go2rtc-homekit](https://github.com/alexdonzel/ha-go2rtc-homekit), [ha-fdk-aac-eld](https://github.com/alexdonzel/ha-fdk-aac-eld) and Home Assistant's two-way audio preview (Settings > System > Labs).
 
 Proposed upstream in Home Assistant core; it follows [home-assistant/core#193419](https://github.com/home-assistant/core/pull/193419) and will be opened once that is merged.
 
