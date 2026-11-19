@@ -46,9 +46,9 @@ jobs:
           build=$(( ${last##*.} + 1 ))
           python3 tools/build.py --tag "$tag" --build "$build"
           git add --intent-to-add custom_components
-          # Ignore the version bump itself when deciding whether anything changed
-          if git diff --quiet -I '"version":' -- custom_components hacs.json \
-              && [ -n "$last" ]; then
+          # Compare with the last release, ignoring the version bump itself
+          if [ -n "$last" ] \
+              && git diff --quiet -I '"version":' "$last" -- custom_components hacs.json; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
@@ -68,6 +68,6 @@ jobs:
           git add custom_components hacs.json
           git commit -m "Build $version for Home Assistant ${{ steps.release.outputs.tag }}"
           git tag "$version"
-          git push origin HEAD "$version"
+          git push --atomic origin HEAD "$version"
           gh release create "$version" --title "$version" \
             --notes "Test build for Home Assistant ${{ steps.release.outputs.tag }}."
