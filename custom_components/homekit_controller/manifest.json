@@ -39,6 +39,6 @@
     "_hap._tcp.local.",
     "_hap._udp.local."
   ],
-  "version": "2026.11.2.1",
+  "version": "2026.11.2.2",
   "issue_tracker": "https://github.com/alexdonzel/ha-homekit-controller-stream/issues"
 }
