@@ -1,0 +1,71 @@
+name: Build for the latest Home Assistant release
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["patches/**", "extras/**", "tools/**", "testbuild.json"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Install translation script dependencies
+        run: pip install orjson voluptuous
+
+      - name: Find the latest Home Assistant release
+        id: release
+        run: |
+          tag=$(gh release view --repo home-assistant/core --json tagName --jq .tagName)
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Build
+        id: build
+        run: |
+          tag=${{ steps.release.outputs.tag }}
+          last=$(git tag --list "$tag.*" --sort=-v:refname | head -n1)
+          build=$(( ${last##*.} + 1 ))
+          python3 tools/build.py --tag "$tag" --build "$build"
+          git add --intent-to-add custom_components
+          # Ignore the version bump itself when deciding whether anything changed
+          if git diff --quiet -I '"version":' -- custom_components hacs.json \
+              && [ -n "$last" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "version=$tag.$build" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check the build compiles
+        if: steps.build.outputs.changed == 'true'
+        run: python3 -m compileall -q custom_components
+
+      - name: Commit and release
+        if: steps.build.outputs.changed == 'true'
+        run: |
+          version=${{ steps.build.outputs.version }}
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add custom_components hacs.json
+          git commit -m "Build $version for Home Assistant ${{ steps.release.outputs.tag }}"
+          git tag "$version"
+          git push origin HEAD "$version"
+          gh release create "$version" --title "$version" \
+            --notes "Test build for Home Assistant ${{ steps.release.outputs.tag }}."
