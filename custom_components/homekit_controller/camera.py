@@ -33,7 +33,7 @@ class HomeKitCamera(AccessoryEntity, Camera):
     def __init__(self, accessory: HKDevice, devinfo: ConfigType) -> None:
         """Initialise the camera."""
         super().__init__(accessory, devinfo)
-        # go2rtc's homekit:// source only streams from IP accessories with aid 1
+        # go2rtc's homekit:// source streams from IP accessories with aid 1
         if accessory.pairing.transport is Transport.IP and self._aid == 1:
             self._attr_supported_features = CameraEntityFeature.STREAM
             # Cameras with a speaker play audio sent on the stream (talk-back)
@@ -50,8 +50,12 @@ class HomeKitCamera(AccessoryEntity, Camera):
         return []
 
     @override
-    async def stream_source(self) -> str | None:
-        """Return a go2rtc homekit:// source for the camera's live stream."""
+    async def webrtc_source(self) -> str | None:
+        """Return a go2rtc homekit:// source for the camera's live stream.
+
+        FFmpeg can't open it, so the camera has no stream_source. Its WebRTC
+        provider (go2rtc) can, and can restream it for FFmpeg.
+        """
         if CameraEntityFeature.STREAM not in self.supported_features:
             return None
         # Unlike HKDevice.pairing_data, the entry follows address changes
