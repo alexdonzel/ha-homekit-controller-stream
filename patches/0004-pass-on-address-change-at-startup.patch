@@ -1,0 +1,14 @@
+diff --git a/camera.py b/camera.py
+index e8d90396..380feb4e 100644
+--- a/camera.py
++++ b/camera.py
+@@ -62,6 +62,9 @@ class HomeKitCamera(AccessoryEntity, Camera):
+                     self._async_entry_updated
+                 )
+             )
++            # The address may have changed before the listener was added, while
++            # the camera registered with its WebRTC provider
++            await self._async_entry_updated(self.hass, self._accessory.config_entry)
+ 
+     async def _async_entry_updated(
+         self, hass: HomeAssistant, entry: ConfigEntry
